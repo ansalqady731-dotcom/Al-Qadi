@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+  <style>
+    @font-face {
+      font-family: 'Cairo';
+      src: local('Cairo');
+    }
+    body {
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 12px;
+      direction: rtl;
+      text-align: right;
+      color: #1E293B;
+      background-color: transparent;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+    body.dark-mode {
+      color: #F1F5F9;
+    }
+    .math-block {
+      direction: ltr !important;
+      text-align: center;
+      margin: 12px 0;
+      padding: 10px;
+      background: rgba(99, 102, 241, 0.06);
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .dark-mode .math-block {
+      background: rgba(99, 102, 241, 0.15);
+    }
+    .step-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .dark-mode .step-card {
+      background: #1E293B;
+      border-color: #334155;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      color: #4F46E5;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .dark-mode .step-header {
+      color: #818CF8;
+    }
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: #4F46E5;
+      color: white;
+      border-radius: 50%;
+      margin-left: 8px;
+      font-size: 13px;
+    }
+    .explanation {
+      margin-top: 6px;
+      font-size: 14.5px;
+      color: #334155;
+    }
+    .dark-mode .explanation {
+      color: #CBD5E1;
+    }
+    .rule-box {
+      background: #EFF6FF;
+      border-right: 4px solid #3B82F6;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 13.5px;
+    }
+    .dark-mode .rule-box {
+      background: #1E3A5F;
+      border-right-color: #60A5FA;
+      color: #DBEAFE;
+    }
+    .mistake-box {
+      background: #FEF2F2;
+      border-right: 4px solid #EF4444;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 13.5px;
+    }
+    .dark-mode .mistake-box {
+      background: #451A1A;
+      border-right-color: #F87171;
+      color: #FEE2E2;
+    }
+    .box-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .final-box {
+      background: #ECFDF5;
+      border: 2px solid #10B981;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .dark-mode .final-box {
+      background: #064E3B;
+      border-color: #34D399;
+      color: #D1FAE5;
+    }
+    .final-title {
+      font-size: 17px;
+      font-weight: bold;
+      color: #065F46;
+      margin-bottom: 6px;
+    }
+    .dark-mode .final-title {
+      color: #A7F3D0;
+    }
+    .final-value {
+      direction: ltr !important;
+      font-size: 20px;
+      font-weight: bold;
+      color: #047857;
+      margin-top: 8px;
+    }
+    .dark-mode .final-value {
+      color: #6EE7B7;
+    }
+    .plot-container {
+      margin-top: 14px;
+      padding: 10px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .dark-mode .plot-container {
+      background: #1E293B;
+      border-color: #334155;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="content"></div>
+
+  <script>
+    function setMathContent(jsonData, isDark) {
+      if (isDark) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+
+      var data;
+      try {
+        data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+      } catch (e) {
+        document.getElementById('content').innerText = typeof jsonData === 'string' ? jsonData : 'خطأ في معالجة البيانات';
+        return;
+      }
+
+      var html = '';
+
+      // Final Answer Box
+      if (data.finalAnswer) {
+        html += '<div class="final-box">';
+        html += '<div class="final-title">🎯 الإجابة النهائية</div>';
+        if (data.finalAnswerText) {
+          html += '<div>' + escapeHtml(data.finalAnswerText) + '</div>';
+        }
+        html += '<div class="final-value math-block">$$' + escapeMath(data.finalAnswer) + '$$</div>';
+        html += '</div>';
+      }
+
+      // Key Formula / Rule if available
+      if (data.keyRule) {
+        html += '<div class="rule-box">';
+        html += '<div class="box-title">💡 القاعدة المفتاحية والقانون المستخدم:</div>';
+        html += '<div>' + escapeHtml(data.keyRule) + '</div>';
+        if (data.keyFormula) {
+          html += '<div class="math-block">$$' + escapeMath(data.keyFormula) + '$$</div>';
+        }
+        html += '</div><br>';
+      }
+
+      // Steps
+      if (data.steps && data.steps.length > 0) {
+        for (var i = 0; i < data.steps.length; i++) {
+          var step = data.steps[i];
+          html += '<div class="step-card">';
+          html += '<div class="step-header">';
+          html += '<span class="step-badge">' + (i + 1) + '</span>';
+          html += '<span>' + escapeHtml(step.title || ('الخطوة ' + (i + 1))) + '</span>';
+          html += '</div>';
+
+          if (step.explanation) {
+            html += '<div class="explanation">' + escapeHtml(step.explanation) + '</div>';
+          }
+
+          if (step.equation) {
+            html += '<div class="math-block">$$' + escapeMath(step.equation) + '$$</div>';
+          }
+
+          html += '</div>';
+        }
+      }
+
+      // Common Pitfall / Mistake
+      if (data.commonMistake) {
+        html += '<div class="mistake-box">';
+        html += '<div class="box-title">⚠️ خطأ شائع يجب الحذر منه:</div>';
+        html += '<div>' + escapeHtml(data.commonMistake) + '</div>';
+        html += '</div>';
+      }
+
+      // Plot canvas for Argand / Graph if points or function specified
+      if (data.plotType) {
+        html += '<div class="plot-container">';
+        html += '<div style="font-weight:bold;margin-bottom:8px;">📊 الرسم التوضيحي (' + escapeHtml(data.plotTitle || 'مخطط بياني') + ')</div>';
+        html += '<canvas id="mathCanvas" width="340" height="260"></canvas>';
+        html += '</div>';
+      }
+
+      document.getElementById('content').innerHTML = html;
+
+      // Render KaTeX safely
+      try {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.getElementById('content'), {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false,
+            strict: 'ignore',
+            trust: false
+          });
+        }
+      } catch (err) {
+        console.error('KaTeX error', err);
+      }
+
+      // Draw canvas if requested
+      if (data.plotType) {
+        setTimeout(function() {
+          drawPlot(data);
+        }, 100);
+      }
+    }
+
+    function drawPlot(data) {
+      var canvas = document.getElementById('mathCanvas');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      var w = canvas.width;
+      var h = canvas.height;
+      var cx = w / 2;
+      var cy = h / 2;
+
+      ctx.clearRect(0, 0, w, h);
+
+      var isDark = document.body.classList.contains('dark-mode');
+      var gridColor = isDark ? '#334155' : '#E2E8F0';
+      var axisColor = isDark ? '#94A3B8' : '#64748B';
+      var textColor = isDark ? '#CBD5E1' : '#475569';
+      var primaryColor = '#4F46E5';
+
+      // Draw grid
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 1;
+      for (var x = 0; x <= w; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (var y = 0; y <= h; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // Draw Axes
+      ctx.strokeStyle = axisColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, cy);
+      ctx.lineTo(w, cy);
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, h);
+      ctx.stroke();
+
+      // Axis labels
+      ctx.fillStyle = textColor;
+      ctx.font = '12px Cairo, sans-serif';
+      if (data.plotType === 'argand') {
+        ctx.fillText('Re (حقيقي)', w - 65, cy - 8);
+        ctx.fillText('Im (تخيلي)', cx + 8, 18);
+        
+        // Plot complex number point z = x + iy
+        var re = data.plotData ? data.plotData.re : 3;
+        var im = data.plotData ? data.plotData.im : 4;
+        var scale = 25;
+        var px = cx + re * scale;
+        var py = cy - im * scale;
+
+        // Vector line from origin
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+
+        // Point
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = isDark ? '#F1F5F9' : '#0F172A';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText('ع = (' + re + ', ' + im + ')', px + 8, py - 4);
+      } else {
+        ctx.fillText('س (X)', w - 40, cy - 8);
+        ctx.fillText('ص (Y)', cx + 8, 18);
+
+        // Plot conic or function
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        var scale = 20;
+        var started = false;
+        for (var sx = -cx; sx <= cx; sx += 2) {
+          var xVal = sx / scale;
+          var yVal = 0;
+          if (data.plotType === 'parabola') {
+            yVal = (xVal * xVal) / (data.plotData && data.plotData.a ? 4 * data.plotData.a : 4);
+          } else if (data.plotType === 'cubic') {
+            yVal = 0.2 * Math.pow(xVal, 3) - xVal;
+          } else {
+            yVal = xVal * xVal; // default quadratic
+          }
+          var sy = cy - yVal * scale;
+          if (sy >= 0 && sy <= h) {
+            if (!started) {
+              ctx.moveTo(cx + sx, sy);
+              started = true;
+            } else {
+              ctx.lineTo(cx + sx, sy);
+            }
+          }
+        }
+        ctx.stroke();
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeMath(math) {
+      if (!math) return '';
+      return math.replace(/\\/g, '\\');
+    }
+  </script>
+</body>
+</html>

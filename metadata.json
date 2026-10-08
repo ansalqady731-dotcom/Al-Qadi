@@ -1,0 +1,6 @@
+{
+  "name": "حلّال الرياضيات",
+  "description": "تطبيق حلّال الرياضيات لطلاب الصف الثالث الثانوي العلمي في اليمن، مع خطوات تفصيلية وتحقق حسابي وتدريب على النماذج الوزارية",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
